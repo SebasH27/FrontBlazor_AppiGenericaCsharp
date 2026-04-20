@@ -1,18 +1,38 @@
 ﻿@page "/"
 
-<PageTitle>CRUD Investigacion</PageTitle>
+<PageTitle>CRUD Investigación</PageTitle>
 
 <div class="container mt-4">
     <h1>CRUD - Base de Datos Mapa de conocimiento</h1>
-    <p class="lead">
-        Frontend Blazor que consume la API generica
-        <strong>ApiGenericaCsharp</strong> para gestionar las tablas
-        de <code>BDMapa_Conocimiento</code>.
-    </p>
 
-    <div class="alert alert-info">
-        <strong>Tablas disponibles:</strong> linea_investigacion.
-        <br />
-        Use el menu lateral para navegar a cada tabla.
+```
+<p class="lead">
+    Frontend Blazor que consume la API genérica
+    <strong>ApiGenericaCsharp</strong> para gestionar las tablas
+    de <code>BDMapa_Conocimiento</code>.
+</p>
+
+<div class="alert alert-info">
+    <strong>Tablas disponibles:</strong>
+    <ul class="mb-0">
+        <li><strong>linea_investigacion</strong> → Gestión de líneas de investigación</li>
+        <li><strong>grupo_investigacion</strong> → Grupos asociados a universidades</li>
+        <li><strong>semillero</strong> → Semilleros asociados a grupos</li>
+    </ul>
+    <hr />
+    Use el menú lateral para navegar a cada módulo CRUD.
+</div>
+
+<div class="card mt-3">
+    <div class="card-body">
+        <h5>Relaciones del sistema</h5>
+        <ul>
+            <li>Un <strong>grupo_investigacion</strong> pertenece a una universidad</li>
+            <li>Un <strong>semillero</strong> pertenece a un grupo de investigación</li>
+            <li>Una <strong>línea de investigación</strong> puede asociarse a múltiples grupos (N:N)</li>
+        </ul>
     </div>
+</div>
+```
+
 </div>

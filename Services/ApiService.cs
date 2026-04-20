@@ -28,26 +28,46 @@ namespace FrontBlazor_AppiGenericaCsharp.Services
         // Devuelve la lista de registros como diccionarios
         // ──────────────────────────────────────────────
         public async Task<List<Dictionary<string, object?>>> ListarAsync(string tabla)
+{
+    try
+    {
+        var response = await _http.GetAsync($"/api/{tabla}");
+
+        var contenidoRaw = await response.Content.ReadAsStringAsync();
+
+        Console.WriteLine($"GET {tabla} → {(int)response.StatusCode}");
+        Console.WriteLine($"BODY: {contenidoRaw}");
+
+        // 🔥 SI NO HAY CONTENIDO
+        if (response.StatusCode == System.Net.HttpStatusCode.NoContent ||
+            string.IsNullOrWhiteSpace(contenidoRaw))
         {
-            try
-            {
-                // Hace GET a la API y obtiene la respuesta como JSON
-                var respuesta = await _http.GetFromJsonAsync<JsonElement>($"/api/{tabla}", _jsonOptions);
-
-                // Extrae la propiedad "datos" de la respuesta
-                if (respuesta.TryGetProperty("datos", out JsonElement datos))
-                {
-                    return ConvertirDatos(datos);
-                }
-
-                return new List<Dictionary<string, object?>>();
-            }
-            catch (HttpRequestException ex)
-            {
-                Console.WriteLine($"Error al listar {tabla}: {ex.Message}");
-                return new List<Dictionary<string, object?>>();
-            }
+            return new List<Dictionary<string, object?>>();
         }
+
+        var json = JsonSerializer.Deserialize<JsonElement>(contenidoRaw, _jsonOptions);
+
+        // Caso normal: { datos: [...] }
+        if (json.ValueKind == JsonValueKind.Object &&
+            json.TryGetProperty("datos", out JsonElement datos))
+        {
+            return ConvertirDatos(datos);
+        }
+
+        // Caso: devuelve directamente []
+        if (json.ValueKind == JsonValueKind.Array)
+        {
+            return ConvertirDatos(json);
+        }
+
+        return new List<Dictionary<string, object?>>();
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"❌ Error al listar {tabla}: {ex.Message}");
+        return new List<Dictionary<string, object?>>();
+    }
+}
 
         // ──────────────────────────────────────────────
         // CREAR: POST /api/{tabla}
@@ -55,24 +75,34 @@ namespace FrontBlazor_AppiGenericaCsharp.Services
         // Devuelve (exito, mensaje) para mostrar al usuario
         // ──────────────────────────────────────────────
         public async Task<(bool exito, string mensaje)> CrearAsync(
-            string tabla, Dictionary<string, object?> datos)
-        {
-            try
-            {
-                var respuesta = await _http.PostAsJsonAsync($"/api/{tabla}", datos);
-                var contenido = await respuesta.Content.ReadFromJsonAsync<JsonElement>(_jsonOptions);
+    string tabla, Dictionary<string, object?> datos)
+{
+    try
+    {
+        var respuesta = await _http.PostAsJsonAsync($"/api/{tabla}", datos);
 
-                string mensaje = contenido.TryGetProperty("mensaje", out JsonElement msg)
-                    ? msg.GetString() ?? "Operacion completada."
-                    : "Operacion completada.";
+        var contenidoRaw = await respuesta.Content.ReadAsStringAsync();
 
-                return (respuesta.IsSuccessStatusCode, mensaje);
-            }
-            catch (HttpRequestException ex)
-            {
-                return (false, $"Error de conexion: {ex.Message}");
-            }
-        }
+        // Agrega esta línea temporal para ver qué responde la API
+Console.WriteLine($"STATUS: {(int)respuesta.StatusCode} | BODY: '{contenidoRaw}'");
+
+        if (string.IsNullOrWhiteSpace(contenidoRaw))
+            return (respuesta.IsSuccessStatusCode,
+                    respuesta.IsSuccessStatusCode ? "Registro creado correctamente." : "Error al crear el registro.");
+
+        var contenido = JsonSerializer.Deserialize<JsonElement>(contenidoRaw, _jsonOptions);
+
+        string mensaje = contenido.TryGetProperty("mensaje", out JsonElement msg)
+            ? msg.GetString() ?? "Operacion completada."
+            : "Operacion completada.";
+
+        return (respuesta.IsSuccessStatusCode, mensaje);
+    }
+    catch (Exception ex)
+    {
+        return (false, $"Error: {ex.Message}");
+    }
+}
 
         // ──────────────────────────────────────────────
         // ACTUALIZAR: PUT /api/{tabla}/{clave}/{valor}

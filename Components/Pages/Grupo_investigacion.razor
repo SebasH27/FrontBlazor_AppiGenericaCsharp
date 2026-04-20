@@ -1,0 +1,275 @@
+@page "/grupo_investigacion"
+@rendermode InteractiveServer
+@inject FrontBlazor_AppiGenericaCsharp.Services.ApiService Api
+
+<PageTitle>Grupo Investigación</PageTitle>
+
+<div class="container mt-4">
+    <h3>Grupo Investigación</h3>
+
+    @if (!string.IsNullOrEmpty(mensaje))
+    {
+        <div class="alert @(exito ? "alert-success" : "alert-danger")">
+            @mensaje
+        </div>
+    }
+
+    @if (!mostrarFormulario)
+    {
+        <button class="btn btn-primary mb-3" @onclick="NuevoRegistro">
+            Nuevo Grupo
+        </button>
+    }
+
+    @if (mostrarFormulario)
+    {
+        <div class="card mb-3">
+            <div class="card-header">
+                @(editando ? "Editar Grupo" : "Nuevo Grupo")
+            </div>
+
+            <div class="card-body">
+                <div class="row">
+
+                    <div class="col-md-6 mb-3">
+                        <label>Nombre</label>
+                        <input class="form-control" @bind="campoNombre" />
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label>URL Gruplac</label>
+                        <input class="form-control" @bind="campoUrl" />
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label>Categoria</label>
+                        <input class="form-control" @bind="campoCategoria" />
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label>Convocatoria</label>
+                        <input class="form-control" @bind="campoConvocatoria" />
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label>Fecha Fundación</label>
+                        <input type="date" class="form-control" @bind="campoFecha" />
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label>Universidad</label>
+                        <select class="form-select" @bind="campoUniversidad">
+                            <option value="0">Seleccione</option>
+                            @foreach (var u in universidades)
+                            {
+                                <option value="@Convert.ToInt32(u["id"])">
+                                    @u["nombre"]
+                                </option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label>Ámbito</label>
+                        <input class="form-control" @bind="campoAmbito" />
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label>Interno</label><br />
+                        <input type="checkbox" @bind="campoInterno" />
+                    </div>
+
+                </div>
+
+                <button class="btn btn-success me-2" @onclick="GuardarRegistro">Guardar</button>
+                <button class="btn btn-secondary" @onclick="Cancelar">Cancelar</button>
+            </div>
+        </div>
+    }
+
+    @if (cargando)
+    {
+        <div class="text-center">Cargando...</div>
+    }
+
+    @if (!cargando && registros.Any())
+    {
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Categoria</th>
+                    <th>Universidad</th>
+                    <th>Interno</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var r in registros)
+                {
+                    <tr>
+                        <td>@r["id"]</td>
+                        <td>@r["nombre"]</td>
+                        <td>@r["categoria"]</td>
+                        <td>@r["universidad"]</td>
+                        <td>@r["interno"]</td>
+                        <td>
+                            <button class="btn btn-warning btn-sm me-1"
+                                    @onclick="() => EditarRegistro(r)">
+                                Editar
+                            </button>
+                            <button class="btn btn-danger btn-sm"
+                                    @onclick="() => EliminarRegistro(r)">
+                                Eliminar
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+
+    @if (!cargando && !registros.Any())
+    {
+        <div class="alert alert-warning">
+            No hay registros en grupo_investigacion.
+        </div>
+    }
+</div>
+
+@code {
+
+    private List<Dictionary<string, object?>> registros = new();
+    private List<Dictionary<string, object?>> universidades = new();
+
+    private bool cargando = true;
+    private bool mostrarFormulario = false;
+    private bool editando = false;
+
+    private string mensaje = "";
+    private bool exito = false;
+
+    private int campoID = 0;
+    private string campoNombre = "";
+    private string campoUrl = "";
+    private string campoCategoria = "";
+    private string campoConvocatoria = "";
+    private DateTime campoFecha = DateTime.Today;
+    private int campoUniversidad = 0;
+    private string campoAmbito = "";
+    private bool campoInterno = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarUniversidades();
+        await CargarRegistros();
+    }
+
+    private async Task CargarUniversidades()
+    {
+        universidades = await Api.ListarAsync("universidad");
+    }
+
+    private async Task CargarRegistros()
+    {
+        cargando = true;
+        registros = await Api.ListarAsync("grupo_investigacion");
+        cargando = false;
+    }
+
+    private void NuevoRegistro()
+    {
+        editando = false;
+        campoID = 0;
+        campoNombre = "";
+        campoUrl = "";
+        campoCategoria = "";
+        campoConvocatoria = "";
+        campoFecha = DateTime.Today;
+        campoUniversidad = 0;
+        campoAmbito = "";
+        campoInterno = false;
+
+        mostrarFormulario = true;
+    }
+
+    private void EditarRegistro(Dictionary<string, object?> r)
+    {
+        editando = true;
+
+        campoID = Convert.ToInt32(r["id"]);
+        campoNombre = r["nombre"]?.ToString() ?? "";
+        campoUrl = r["url_gruplac"]?.ToString() ?? "";
+        campoCategoria = r["categoria"]?.ToString() ?? "";
+        campoConvocatoria = r["convocatoria"]?.ToString() ?? "";
+
+        DateTime.TryParse(r["fecha_fundacion"]?.ToString(), out campoFecha);
+
+        campoUniversidad = Convert.ToInt32(r["universidad"] ?? 0);
+        campoAmbito = r["ambito"]?.ToString() ?? "";
+
+        campoInterno = r["interno"]?.ToString() == "1" || r["interno"]?.ToString()?.ToLower() == "true";
+
+        mostrarFormulario = true;
+    }
+
+    private async Task GuardarRegistro()
+    {
+        var datos = new Dictionary<string, object?>
+        {
+            ["id"] = campoID,
+            ["nombre"] = campoNombre,
+            ["url_gruplac"] = campoUrl,
+            ["categoria"] = campoCategoria,
+            ["convocatoria"] = campoConvocatoria,
+
+            // 🔥 IMPORTANTE: enviar DateTime, NO string
+            ["fecha_fundacion"] = campoFecha,
+
+            // 🔥 FK segura
+            ["universidad"] = campoUniversidad == 0 ? null : campoUniversidad,
+
+            ["ambito"] = campoAmbito,
+
+            // 🔥 bool compatible
+            ["interno"] = campoInterno ? 1 : 0
+        };
+
+        if (editando)
+        {
+            var res = await Api.ActualizarAsync("grupo_investigacion", "id", campoID.ToString(), datos);
+            exito = res.exito;
+            mensaje = res.mensaje;
+        }
+        else
+        {
+            var res = await Api.CrearAsync("grupo_investigacion", datos);
+            exito = res.exito;
+            mensaje = res.mensaje;
+        }
+
+        if (exito)
+        {
+            mostrarFormulario = false;
+            await CargarRegistros();
+        }
+    }
+
+    private async Task EliminarRegistro(Dictionary<string, object?> r)
+    {
+        var id = r["id"]?.ToString();
+
+        var res = await Api.EliminarAsync("grupo_investigacion", "id", id!);
+        exito = res.exito;
+        mensaje = res.mensaje;
+
+        if (exito)
+            await CargarRegistros();
+    }
+
+    private void Cancelar()
+    {
+        mostrarFormulario = false;
+    }
+}

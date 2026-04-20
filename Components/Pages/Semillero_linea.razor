@@ -1,0 +1,173 @@
+@page "/semillero_linea"
+@rendermode InteractiveServer
+@inject FrontBlazor_AppiGenericaCsharp.Services.ApiService Api
+
+<PageTitle>Semillero - Línea</PageTitle>
+
+<div class="container mt-4">
+    <h3>Relación Semillero - Línea de Investigación</h3>
+
+```
+@* ───────── ALERTA ───────── *@
+@if (!string.IsNullOrEmpty(mensaje))
+{
+    <div class="alert @(exito ? "alert-success" : "alert-danger")">
+        @mensaje
+    </div>
+}
+
+@* ───────── FORMULARIO ───────── *@
+<div class="card mb-3">
+    <div class="card-body">
+
+        <div class="row">
+
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Semillero</label>
+                <select class="form-select" @bind="semilleroSeleccionado">
+                    <option value="0">Seleccione</option>
+                    @foreach (var s in semilleros)
+                    {
+                        <option value="@s["id"]">@s["nombre"]</option>
+                    }
+                </select>
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Línea de Investigación</label>
+                <select class="form-select" @bind="lineaSeleccionada">
+                    <option value="0">Seleccione</option>
+                    @foreach (var l in lineas)
+                    {
+                        <option value="@l["id"]">@l["nombre"]</option>
+                    }
+                </select>
+            </div>
+
+        </div>
+
+        <button class="btn btn-success" @onclick="AgregarRelacion">
+            Agregar Relación
+        </button>
+
+    </div>
+</div>
+
+@* ───────── TABLA ───────── *@
+@if (relaciones.Any())
+{
+    <table class="table table-striped">
+        <thead class="table-dark">
+            <tr>
+                <th>Semillero</th>
+                <th>Línea</th>
+                <th>Acción</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var r in relaciones)
+            {
+                <tr>
+                    <td>@r["semillero"]</td>
+                    <td>@r["linea_investigacion"]</td>
+                    <td>
+                        <button class="btn btn-danger btn-sm"
+                                @onclick="() => EliminarRelacion(r)">
+                            Eliminar
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@if (!relaciones.Any())
+{
+    <div class="alert alert-warning">
+        No hay relaciones registradas.
+    </div>
+}
+```
+
+</div>
+
+@code {
+
+// ───────── LISTAS ─────────
+private List<Dictionary<string, object?>> semilleros = new();
+private List<Dictionary<string, object?>> lineas = new();
+private List<Dictionary<string, object?>> relaciones = new();
+
+// ───────── CAMPOS ─────────
+private int semilleroSeleccionado = 0;
+private int lineaSeleccionada = 0;
+
+private string mensaje = "";
+private bool exito = false;
+
+private bool cargando = true;
+
+// ───────── INICIO ─────────
+protected override async Task OnInitializedAsync()
+{
+    await CargarDatos();
+}
+
+private async Task CargarDatos()
+{
+    cargando = true;
+
+    semilleros = await Api.ListarAsync("semillero");
+    lineas = await Api.ListarAsync("linea_investigacion");
+    relaciones = await Api.ListarAsync("semillero_linea");
+
+    cargando = false;
+}
+
+// ───────── CREAR RELACIÓN ─────────
+private async Task AgregarRelacion()
+{
+    if (semilleroSeleccionado == 0 || lineaSeleccionada == 0)
+    {
+        mensaje = "Debe seleccionar ambos campos.";
+        exito = false;
+        return;
+    }
+
+    var datos = new Dictionary<string, object?>
+    {
+        ["semillero"] = semilleroSeleccionado,
+        ["linea_investigacion"] = lineaSeleccionada
+    };
+
+    var res = await Api.CrearAsync("semillero_linea", datos);
+
+    exito = res.exito;
+    mensaje = res.mensaje;
+
+    if (exito)
+        await CargarDatos();
+}
+
+// ───────── ELIMINAR RELACIÓN ─────────
+private async Task EliminarRelacion(Dictionary<string, object?> r)
+{
+    var semillero = r["semillero"]?.ToString();
+
+    // ⚠️ IMPORTANTE: tu API probablemente solo elimina por una clave
+    // (si no soporta PK compuesta)
+    var res = await Api.EliminarAsync(
+        "semillero_linea",
+        "semillero",
+        semillero!
+    );
+
+    exito = res.exito;
+    mensaje = res.mensaje;
+
+    if (exito)
+        await CargarDatos();
+}
+
+}

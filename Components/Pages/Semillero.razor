@@ -1,0 +1,222 @@
+@page "/semillero"
+@rendermode InteractiveServer
+@inject FrontBlazor_AppiGenericaCsharp.Services.ApiService Api
+
+<PageTitle>Semillero</PageTitle>
+
+<div class="container mt-4">
+    <h3>Semillero</h3>
+
+    @if (!string.IsNullOrEmpty(mensaje))
+    {
+        <div class="alert @(exito ? "alert-success" : "alert-danger")">
+            @mensaje
+        </div>
+    }
+
+    @if (!mostrarFormulario)
+    {
+        <button class="btn btn-primary mb-3" @onclick="NuevoRegistro">
+            Nuevo Semillero
+        </button>
+    }
+
+    @if (mostrarFormulario)
+    {
+        <div class="card mb-3">
+            <div class="card-header">
+                @(editando ? "Editar Semillero" : "Nuevo Semillero")
+            </div>
+
+            <div class="card-body">
+
+                <div class="row">
+
+                    <div class="col-md-4 mb-3">
+                        <label>ID</label>
+                        <input type="number" class="form-control" @bind="campoID" />
+                    </div>
+
+                    <div class="col-md-8 mb-3">
+                        <label>Nombre</label>
+                        <input class="form-control" @bind="campoNombre" />
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label>Fecha Fundación</label>
+                        <input type="date" class="form-control" @bind="campoFecha" />
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label>Grupo Investigación</label>
+                        <select class="form-select" @bind="campoGrupo">
+                            <option value="0">Seleccione</option>
+                            @foreach (var g in grupos)
+                            {
+                                <option value="@g["id"]">@g["nombre"]</option>
+                            }
+                        </select>
+                    </div>
+
+                </div>
+
+                <button class="btn btn-success me-2" @onclick="GuardarRegistro">Guardar</button>
+                <button class="btn btn-secondary" @onclick="Cancelar">Cancelar</button>
+            </div>
+        </div>
+    }
+
+    @if (cargando)
+    {
+        <div class="text-center">Cargando...</div>
+    }
+
+    @if (!cargando && registros.Any())
+    {
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Fecha</th>
+                    <th>Grupo</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var r in registros)
+                {
+                    <tr>
+                        <td>@r["id"]</td>
+                        <td>@r["nombre"]</td>
+                        <td>@r["fecha_fundacion"]</td>
+                        <td>@r["grupo_investigacion"]</td>
+                        <td>
+                            <button class="btn btn-warning btn-sm me-1"
+                                    @onclick="() => EditarRegistro(r)">
+                                Editar
+                            </button>
+                            <button class="btn btn-danger btn-sm"
+                                    @onclick="() => EliminarRegistro(r)">
+                                Eliminar
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+
+    @if (!cargando && !registros.Any())
+    {
+        <div class="alert alert-warning">No hay semilleros registrados.</div>
+    }
+</div>
+
+@code {
+
+    private List<Dictionary<string, object?>> registros = new();
+    private List<Dictionary<string, object?>> grupos = new();
+
+    private bool cargando = true;
+    private bool mostrarFormulario = false;
+    private bool editando = false;
+
+    private string mensaje = "";
+    private bool exito = false;
+
+    private int campoID = 0;
+    private string campoNombre = "";
+    private DateTime campoFecha = DateTime.Today;
+    private int campoGrupo = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarGrupos();
+        await CargarRegistros();
+    }
+
+    private async Task CargarGrupos()
+    {
+        grupos = await Api.ListarAsync("grupo_investigacion");
+    }
+
+    private async Task CargarRegistros()
+    {
+        cargando = true;
+        registros = await Api.ListarAsync("semillero");
+        cargando = false;
+    }
+
+    private void NuevoRegistro()
+    {
+        editando = false;
+        campoID = 0;
+        campoNombre = "";
+        campoFecha = DateTime.Today;
+        campoGrupo = 0;
+
+        mostrarFormulario = true;
+    }
+
+    private void EditarRegistro(Dictionary<string, object?> r)
+    {
+        editando = true;
+
+        campoID = int.Parse(r["id"]?.ToString() ?? "0");
+        campoNombre = r["nombre"]?.ToString() ?? "";
+        campoFecha = DateTime.TryParse(r["fecha_fundacion"]?.ToString(), out var f) ? f : DateTime.Today;
+        campoGrupo = int.Parse(r["grupo_investigacion"]?.ToString() ?? "0");
+
+        mostrarFormulario = true;
+    }
+
+    private async Task GuardarRegistro()
+    {
+        var datos = new Dictionary<string, object?>
+        {
+            ["id"] = campoID, // ⚠️ obligatorio porque NO es identity
+            ["nombre"] = campoNombre,
+            ["fecha_fundacion"] = campoFecha.ToString("yyyy-MM-dd"),
+            ["grupo_investigacion"] = campoGrupo
+        };
+
+        if (editando)
+        {
+            datos.Remove("id");
+
+            var res = await Api.ActualizarAsync("semillero", "id", campoID.ToString(), datos);
+            exito = res.exito;
+            mensaje = res.mensaje;
+        }
+        else
+        {
+            var res = await Api.CrearAsync("semillero", datos);
+            exito = res.exito;
+            mensaje = res.mensaje;
+        }
+
+        if (exito)
+        {
+            mostrarFormulario = false;
+            await CargarRegistros();
+        }
+    }
+
+    private async Task EliminarRegistro(Dictionary<string, object?> r)
+    {
+        var id = r["id"]?.ToString();
+
+        var res = await Api.EliminarAsync("semillero", "id", id!);
+        exito = res.exito;
+        mensaje = res.mensaje;
+
+        if (exito)
+            await CargarRegistros();
+    }
+
+    private void Cancelar()
+    {
+        mostrarFormulario = false;
+    }
+}

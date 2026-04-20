@@ -1,0 +1,155 @@
+@page "/ods_linea"
+@rendermode InteractiveServer
+@inject FrontBlazor_AppiGenericaCsharp.Services.ApiService Api
+
+<PageTitle>ODS - Línea</PageTitle>
+
+<div class="container mt-4">
+    <h3>Relación ODS - Línea de Investigación</h3>
+
+    @if (!string.IsNullOrEmpty(mensaje))
+    {
+        <div class="alert @(exito ? "alert-success" : "alert-danger")">
+            @mensaje
+        </div>
+    }
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <div class="row">
+
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">ODS</label>
+                    <select class="form-select" @bind="odsSeleccionado">
+                        <option value="0">Seleccione</option>
+                        @foreach (var o in ods)
+                        {
+                            <option value="@o["id"]">@o["nombre"]</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Línea de Investigación</label>
+                    <select class="form-select" @bind="lineaSeleccionada">
+                        <option value="0">Seleccione</option>
+                        @foreach (var l in lineas)
+                        {
+                            <option value="@l["id"]">@l["nombre"]</option>
+                        }
+                    </select>
+                </div>
+
+            </div>
+
+            <button class="btn btn-success" @onclick="Agregar">
+                Agregar Relación
+            </button>
+        </div>
+    </div>
+
+    @if (relaciones.Any())
+    {
+        <table class="table table-striped">
+            <thead class="table-dark">
+                <tr>
+                    <th>ODS</th>
+                    <th>Línea de Investigación</th>
+                    <th>Acción</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var r in relaciones)
+                {
+                    <tr>
+                        <td>@r["ods"]</td>
+                        <td>@r["linea_investigacion"]</td>
+                        <td>
+                            <button class="btn btn-danger btn-sm"
+                                    @onclick="() => Eliminar(r)">
+                                Eliminar
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+
+    @if (!relaciones.Any())
+    {
+        <div class="alert alert-warning">
+            No hay relaciones registradas.
+        </div>
+    }
+
+</div>
+
+@code {
+
+    private List<Dictionary<string, object?>> ods = new();
+    private List<Dictionary<string, object?>> lineas = new();
+    private List<Dictionary<string, object?>> relaciones = new();
+
+    private int odsSeleccionado = 0;
+    private int lineaSeleccionada = 0;
+
+    private string mensaje = "";
+    private bool exito = false;
+    private bool cargando = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarDatos();
+    }
+
+    private async Task CargarDatos()
+    {
+        cargando = true;
+        ods        = await Api.ListarAsync("ods");
+        lineas     = await Api.ListarAsync("linea_investigacion");
+        relaciones = await Api.ListarAsync("ods_linea");
+        cargando = false;
+    }
+
+    private async Task Agregar()
+    {
+        if (odsSeleccionado == 0 || lineaSeleccionada == 0)
+        {
+            mensaje = "Debe seleccionar ambos campos.";
+            exito = false;
+            return;
+        }
+
+        var datos = new Dictionary<string, object?>
+        {
+            ["ods"]                  = odsSeleccionado,
+            ["linea_investigacion"]  = lineaSeleccionada
+        };
+
+        var res = await Api.CrearAsync("ods_linea", datos);
+
+        exito   = res.exito;
+        mensaje = res.mensaje;
+
+        if (exito)
+            await CargarDatos();
+    }
+
+    private async Task Eliminar(Dictionary<string, object?> r)
+    {
+        var odsVal = r["ods"]?.ToString();
+
+        var res = await Api.EliminarAsync(
+            "ods_linea",
+            "ods",
+            odsVal!
+        );
+
+        exito   = res.exito;
+        mensaje = res.mensaje;
+
+        if (exito)
+            await CargarDatos();
+    }
+}

@@ -1,0 +1,182 @@
+@page "/participa_semillero"
+@rendermode InteractiveServer
+@inject FrontBlazor_AppiGenericaCsharp.Services.ApiService Api
+
+<PageTitle>Participación en Semillero</PageTitle>
+
+<div class="container mt-4">
+    <h3>Participación Docente - Semillero</h3>
+
+    @if (!string.IsNullOrEmpty(mensaje))
+    {
+        <div class="alert @(exito ? "alert-success" : "alert-danger")">
+            @mensaje
+        </div>
+    }
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <div class="row">
+
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Docente</label>
+                    <select class="form-select" @bind="docenteSeleccionado">
+                        <option value="0">Seleccione</option>
+                        @foreach (var d in docentes)
+                        {
+                            <option value="@d["cedula"]">@d["nombres"]</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Semillero</label>
+                    <select class="form-select" @bind="semilleroSeleccionado">
+                        <option value="0">Seleccione</option>
+                        @foreach (var s in semilleros)
+                        {
+                            <option value="@s["id"]">@s["nombre"]</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Rol</label>
+                    <input class="form-control" @bind="campoRol" />
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Fecha Inicio</label>
+                    <input type="date" class="form-control" @bind="fechaInicio" />
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Fecha Fin</label>
+                    <input type="date" class="form-control" @bind="fechaFin" />
+                </div>
+
+            </div>
+
+            <button class="btn btn-success" @onclick="Agregar">
+                Guardar
+            </button>
+        </div>
+    </div>
+
+    @if (registros.Any())
+    {
+        <table class="table table-striped">
+            <thead class="table-dark">
+                <tr>
+                    <th>Docente</th>
+                    <th>Semillero</th>
+                    <th>Rol</th>
+                    <th>Inicio</th>
+                    <th>Fin</th>
+                    <th>Acción</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var r in registros)
+                {
+                    <tr>
+                        <td>@r["docente"]</td>
+                        <td>@r["semillero"]</td>
+                        <td>@r["rol"]</td>
+                        <td>@r["fecha_inicio"]</td>
+                        <td>@r["fecha_fin"]</td>
+                        <td>
+                            <button class="btn btn-danger btn-sm"
+                                    @onclick="() => Eliminar(r)">
+                                Eliminar
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+
+    @if (!registros.Any())
+    {
+        <div class="alert alert-warning">
+            No hay registros de participación en semilleros.
+        </div>
+    }
+
+</div>
+
+@code {
+
+    private List<Dictionary<string, object?>> docentes = new();
+    private List<Dictionary<string, object?>> semilleros = new();
+    private List<Dictionary<string, object?>> registros = new();
+
+    private int docenteSeleccionado = 0;
+    private int semilleroSeleccionado = 0;
+    private string campoRol = "";
+    private DateTime fechaInicio = DateTime.Today;
+    private DateTime fechaFin = DateTime.Today;
+
+    private string mensaje = "";
+    private bool exito = false;
+    private bool cargando = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarDatos();
+    }
+
+    private async Task CargarDatos()
+    {
+        cargando = true;
+        docentes  = await Api.ListarAsync("docente");
+        semilleros = await Api.ListarAsync("semillero");
+        registros  = await Api.ListarAsync("participa_semillero");
+        cargando = false;
+    }
+
+    private async Task Agregar()
+    {
+        if (docenteSeleccionado == 0 || semilleroSeleccionado == 0)
+        {
+            mensaje = "Debe seleccionar docente y semillero.";
+            exito = false;
+            return;
+        }
+
+        var datos = new Dictionary<string, object?>
+        {
+            ["docente"]    = docenteSeleccionado,
+            ["semillero"]  = semilleroSeleccionado,
+            ["rol"]        = campoRol,
+            ["fecha_inicio"] = fechaInicio.ToString("yyyy-MM-dd"),
+            ["fecha_fin"]    = fechaFin.ToString("yyyy-MM-dd")
+        };
+
+        var res = await Api.CrearAsync("participa_semillero", datos);
+
+        exito   = res.exito;
+        mensaje = res.mensaje;
+
+        if (exito)
+            await CargarDatos();
+    }
+
+    private async Task Eliminar(Dictionary<string, object?> r)
+    {
+        var docente = r["docente"]?.ToString();
+
+        var res = await Api.EliminarAsync(
+            "participa_semillero",
+            "docente",
+            docente!
+        );
+
+        exito   = res.exito;
+        mensaje = res.mensaje;
+
+        if (exito)
+            await CargarDatos();
+    }
+}

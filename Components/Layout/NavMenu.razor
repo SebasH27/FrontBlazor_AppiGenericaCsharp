@@ -9,19 +9,82 @@
 <div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
     <nav class="nav flex-column">
 
-        @* Link a la pagina de inicio *@
+        @* ───────── HOME ───────── *@
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
+                <span class="bi bi-house-door-fill-nav-menu"></span> Home
             </NavLink>
         </div>
 
-        @* Links a las 6 tablas sin clave foranea *@
+        @* ───────── LINEA INVESTIGACION ───────── *@
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="linea_investigacion">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Linea investigacion
+                <span class="bi bi-diagram-3"></span> Linea investigacion
             </NavLink>
         </div>
+
+        @* ───────── GRUPO INVESTIGACION ───────── *@
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="grupo_investigacion">
+                <span class="bi bi-people-fill"></span> Grupo investigacion
+            </NavLink>
+        </div>
+
+        @* ───────── SEMILLERO ───────── *@
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="semillero">
+                <span class="bi bi-collection"></span> Semillero
+            </NavLink>
+        </div>
+
+        @* ───────── GRUPO - LINEA (N:N) ───────── *@
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="grupo_linea">
+                <span class="bi bi-link-45deg"></span> Grupo - Línea
+            </NavLink>
+        </div>
+
+        @* ───────── SEMILLERO - LINEA (N:N) ───────── *@
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="semillero_linea">
+                <span class="bi bi-diagram-2"></span> Semillero - Línea
+            </NavLink>
+        </div>
+
+        @* ───────── AA LINEA (N:N) ───────── *@
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="aa_linea">
+                <span class="bi bi-intersect"></span> Área Aplic. - Línea
+            </NavLink>
+        </div>
+
+        @* ───────── AC LINEA (N:N) ───────── *@
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="ac_linea">
+                <span class="bi bi-journal-bookmark"></span> Área Conoc. - Línea
+            </NavLink>
+        </div>
+
+        @* ───────── ODS LINEA (N:N) ───────── *@
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="ods_linea">
+                <span class="bi bi-globe2"></span> ODS - Línea
+            </NavLink>
+        </div>
+
+        @* ───────── PARTICIPA GRUPO (N:N) ───────── *@
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="participa_grupo">
+                <span class="bi bi-person-lines-fill"></span> Participa Grupo
+            </NavLink>
+        </div>
+
+        @* ───────── PARTICIPA SEMILLERO (N:N) ───────── *@
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="participa_semillero">
+                <span class="bi bi-person-check"></span> Participa Semillero
+            </NavLink>
+        </div>
+
     </nav>
 </div>
-

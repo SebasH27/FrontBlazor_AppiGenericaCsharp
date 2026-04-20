@@ -27,14 +27,10 @@
     {
         <div class="card mb-3">
             <div class="card-header">
-                @(editando ? "Editar Producto" : "Nuevo Producto")
+                @(editando ? "Editar Registro" : "Nuevo Registro")
             </div>
             <div class="card-body">
                 <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">ID</label>
-                        <input class="form-control" @bind="campoID" disabled="@editando" />
-                    </div>
                     <div class="col-md-6 mb-3">
                         <label class="form-label">Nombre</label>
                         <input class="form-control" @bind="campoNombre" />
@@ -173,7 +169,6 @@
         // Arma el diccionario con los datos del formulario
         var datos = new Dictionary<string, object?>
         {
-            ["id"] = campoID,
             ["nombre"] = campoNombre,
             ["descripcion"] = campoDescripcion
         };
